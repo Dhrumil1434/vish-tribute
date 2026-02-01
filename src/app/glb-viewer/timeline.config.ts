@@ -62,7 +62,8 @@ export const TIMELINE_CONFIG: TimelineConfig = {
       startSeconds: 17,
       endSeconds: 37,
       sanskrit: 'सृष्टेः पूर्वं विचारः। यत् चिन्तितं तत् सृज्यते।',
-      translation: 'Before creation, there is design. What is conceived in thought is brought into form.',
+      translation:
+        'Before creation, there is design. What is conceived in thought is brought into form.',
       description:
         'Every temple, every tool, every wonder of the world begins as a thought in the mind of the divine architect. Wisdom shapes intention; intention becomes form. So it has been since the dawn of time.',
     },

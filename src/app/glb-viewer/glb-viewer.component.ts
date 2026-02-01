@@ -1,11 +1,4 @@
-import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  OnDestroy,
-  ViewChild,
-  signal,
-} from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -52,7 +45,9 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
   /** Current playback time in seconds (for seekbar). */
   protected readonly currentTimeSeconds = signal(0);
   /** Comments: array of { id, name, message, feeling, date }. */
-  protected readonly comments = signal<{ id: string; name: string; message: string; feeling: string; date: string }[]>([]);
+  protected readonly comments = signal<
+    { id: string; name: string; message: string; feeling: string; date: string }[]
+  >([]);
   protected commentName = '';
   protected commentMessage = '';
   protected commentFeeling: string = FEELING_OPTIONS[0];
@@ -262,7 +257,9 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
       this.audioReady.set(true);
     });
     this.audio.addEventListener('error', () => {
-      console.warn('Audio failed to load. Check that the file exists in public/ and the path is correct.');
+      console.warn(
+        'Audio failed to load. Check that the file exists in public/ and the path is correct.'
+      );
       this.audioReady.set(false);
     });
     this.audio.addEventListener('ended', () => this.onAudioEnded());
@@ -294,10 +291,13 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
     // Force resize so canvas and camera are in sync when main screen appears
     requestAnimationFrame(() => this.onResize());
     setTimeout(() => this.onResize(), 50);
-    this.audio.play().then(() => this.musicPlaying.set(true)).catch((err) => {
-      console.warn('Playback failed:', err);
-      this.startingRitual.set(false);
-    });
+    this.audio
+      .play()
+      .then(() => this.musicPlaying.set(true))
+      .catch((err) => {
+        console.warn('Playback failed:', err);
+        this.startingRitual.set(false);
+      });
   }
 
   protected seekTo(seconds: number): void {
@@ -313,17 +313,23 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
       const raw = localStorage.getItem(COMMENTS_KEY);
       const list = raw ? JSON.parse(raw) : [];
       const items = Array.isArray(list) ? list : [];
-      const normalized: { id: string; name: string; message: string; feeling: string; date: string }[] = items.map(
-        (c: Record<string, unknown>) => ({
-          id: (c['id'] as string) ?? crypto.randomUUID(),
-          name: (c['name'] as string) ?? '',
-          message: (c['message'] as string) ?? '',
-          date: (c['date'] as string) ?? new Date().toISOString(),
-          feeling:
-            (c['feeling'] as string) ??
-            (c['rating'] != null ? FEELING_OPTIONS[Math.min((c['rating'] as number) - 1, 3)] : FEELING_OPTIONS[0]),
-        })
-      );
+      const normalized: {
+        id: string;
+        name: string;
+        message: string;
+        feeling: string;
+        date: string;
+      }[] = items.map((c: Record<string, unknown>) => ({
+        id: (c['id'] as string) ?? crypto.randomUUID(),
+        name: (c['name'] as string) ?? '',
+        message: (c['message'] as string) ?? '',
+        date: (c['date'] as string) ?? new Date().toISOString(),
+        feeling:
+          (c['feeling'] as string) ??
+          (c['rating'] != null
+            ? FEELING_OPTIONS[Math.min((c['rating'] as number) - 1, 3)]
+            : FEELING_OPTIONS[0]),
+      }));
       this.comments.set(normalized);
     } catch {
       this.comments.set([]);
@@ -490,8 +496,10 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
               }
               mat.envMap = envMap;
               mat.envMapIntensity = 0.6;
-              if (typeof mat.metalness === 'number') mat.metalness = Math.min(0.4, mat.metalness + 0.15);
-              if (typeof mat.roughness === 'number') mat.roughness = Math.max(0.45, mat.roughness * 0.9);
+              if (typeof mat.metalness === 'number')
+                mat.metalness = Math.min(0.4, mat.metalness + 0.15);
+              if (typeof mat.roughness === 'number')
+                mat.roughness = Math.max(0.45, mat.roughness * 0.9);
               mat.needsUpdate = true;
             }
           }
@@ -637,11 +645,7 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
         if (elapsed > 0.3) this.showEndingLine.set(true);
         const f = elapsed / dur;
         this.renderer.toneMappingExposure = this.initialExposure * (1 - f);
-        this.sceneBackgroundColor.lerpColors(
-          this.initialBackground,
-          new THREE.Color(0x000000),
-          f
-        );
+        this.sceneBackgroundColor.lerpColors(this.initialBackground, new THREE.Color(0x000000), f);
         this.overlayFade.set(1 - f);
       }
     } else if (this.fadePhase === 'silence') {
@@ -670,8 +674,7 @@ export class GlbViewerComponent implements AfterViewInit, OnDestroy {
     }
 
     const sceneTime = this.getSceneTime();
-    const t =
-      this.fadePhase === 'fading' || this.fadePhase === 'silence' ? 124 : sceneTime;
+    const t = this.fadePhase === 'fading' || this.fadePhase === 'silence' ? 124 : sceneTime;
     const [cx, cy, cz] = this.lerpKeyframes(this.cameraKeyframes, t);
     this.camera.position.set(cx, cy, cz);
     this.camera.lookAt(0, 0, 0);
