@@ -1,0 +1,235 @@
+<div class="viewer-wrapper">
+  <div #canvasContainer class="canvas-container"></div>
+  <div class="scene-gradient" aria-hidden="true"></div>
+
+  @if (!modelLoaded()) {
+    <div class="loading">
+      <div class="loading-dots">
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+      </div>
+      <span class="loading-text">Loading…</span>
+    </div>
+  }
+
+  @if (startingRitual()) {
+    <div class="starting-overlay">
+      <div class="starting-content">
+        <div class="starting-dots">
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+          <span class="loading-dot"></span>
+        </div>
+        <p class="starting-text">Starting ritual…</p>
+        <p class="starting-sub">Music and scene are preparing</p>
+      </div>
+    </div>
+  }
+
+  <div
+    class="intro-overlay"
+    [style.opacity]="introOverlayOpacity()"
+    [class.hidden]="introOverlayOpacity() === 0"
+  >
+    <div class="intro-content">
+      <p class="welcome-label">A tribute to</p>
+      <h1 class="welcome-title">विश्वकर्मा</h1>
+      <p class="welcome-sub">The Divine Architect</p>
+      @if (modelLoaded() && !musicPlaying() && !startingRitual()) {
+        <button
+          type="button"
+          class="start-music"
+          (click)="startMusic(); $event.stopPropagation()"
+          [disabled]="!audioReady()"
+          aria-label="Start ritual"
+        >
+          <span class="start-icon" aria-hidden="true">▶</span>
+          <span>{{ audioReady() ? 'Begin' : 'Loading…' }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <a
+    class="linkedin-link meta-ui"
+    [href]="linkedInUrl"
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label="Dhrumil Panchal on LinkedIn"
+    [style.opacity]="overlayFade() * (1 - introOverlayOpacity()) * metaUIOpacity()"
+  >
+    <svg class="linkedin-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+    </svg>
+    <span class="linkedin-label">Dhrumil Panchal</span>
+  </a>
+
+  <div
+    class="overlay"
+    [class.fade-out]="overlayFade() < 0.5"
+    [style.opacity]="overlayFade() * (1 - introOverlayOpacity())"
+  >
+    @if (currentSegment(); as seg) {
+      <div class="segment-card">
+        <p class="segment-title">{{ seg.title }}</p>
+        <p class="sanskrit">{{ seg.sanskrit }}</p>
+        <div class="segment-divider" aria-hidden="true"></div>
+        <p class="translation">{{ seg.translation }}</p>
+        <p class="description">{{ seg.description }}</p>
+      </div>
+    }
+  </div>
+
+  <div
+    class="visitor-count meta-ui"
+    [style.opacity]="overlayFade() * (1 - introOverlayOpacity()) * metaUIOpacity()"
+  >
+    <span class="visitor-label">Visitors</span>
+    <span class="visitor-number">{{ visitorCount() | number }}</span>
+  </div>
+
+  @if (modelLoaded() && showDraggableHint() && introOverlayOpacity() === 0) {
+    <div class="draggable-hint" [style.opacity]="overlayFade()">
+      <span class="draggable-icon" aria-hidden="true">⟷</span>
+      <span><em>Drag to explore. Release to return to rhythm.</em></span>
+    </div>
+  }
+
+  @if (showShapingMessage()) {
+    <p class="shaping-message" [style.opacity]="overlayFade()">
+      <em>You are now shaping the view.</em>
+    </p>
+  }
+
+  @if (introOverlayOpacity() === 0 && musicPlaying() && overlayFade() >= 0.5) {
+    <div
+      class="seekbar-wrapper"
+      [class.seekbar-idle]="!seekbarHovered() && !isSeeking"
+      [style.opacity]="overlayFade() * (seekbarHovered() || isSeeking ? 1 : 0.9)"
+      (mouseenter)="seekbarHovered.set(true)"
+      (mouseleave)="seekbarHovered.set(false)"
+    >
+      <div class="seekbar-track">
+        @for (seg of config.sceneTimeline; track seg.id) {
+          <span
+            class="seekbar-marker"
+            [style.left.%]="getTimelineMarkerPercent(seg)"
+            [attr.aria-label]="'Segment ' + seg.id + ': ' + seg.time.start"
+          ></span>
+        }
+        <div
+          class="seekbar-progress"
+          [style.width.%]="(currentTimeSeconds() / config.audio.totalDurationSeconds) * 100"
+        ></div>
+        <div
+          class="seekbar-dot"
+          [style.left.%]="(currentTimeSeconds() / config.audio.totalDurationSeconds) * 100"
+        ></div>
+      </div>
+      <input
+        type="range"
+        class="seekbar-input"
+        [min]="0"
+        [max]="config.audio.totalDurationSeconds"
+        [value]="currentTimeSeconds()"
+        (input)="seekTo($any($event.target).valueAsNumber)"
+        (mousedown)="isSeeking = true"
+        (mouseup)="isSeeking = false"
+        (mouseleave)="isSeeking = false"
+        (touchstart)="isSeeking = true"
+        (touchend)="isSeeking = false"
+        aria-label="Seek timeline"
+      />
+    </div>
+  }
+
+  @if (showEndingLine()) {
+    <p class="ending-line" [style.opacity]="overlayFade()">
+      <em>Creation is never finished.</em>
+    </p>
+  }
+
+  <div
+    class="comments-section meta-ui"
+    [class.comments-expanded]="commentsExpanded()"
+    [style.opacity]="overlayFade() * (1 - introOverlayOpacity()) * metaUIOpacity()"
+  >
+    @if (commentsExpanded()) {
+      <div class="comments-backdrop" (click)="commentsExpanded.set(false)" aria-hidden="true"></div>
+    }
+    <div class="comments-panel" [class.expanded]="commentsExpanded()">
+      @if (commentsExpanded()) {
+        <button type="button" class="comments-close" (click)="commentsExpanded.set(false)" aria-label="Close">×</button>
+        <div class="comments-header">
+          <h3 class="comments-title">Reflections</h3>
+          <span class="comments-live-badge">
+            <span class="comments-live-dot" aria-hidden="true"></span>
+            {{ comments().length }} {{ comments().length === 1 ? 'reflection' : 'reflections' }} · visible here
+          </span>
+        </div>
+        <p class="comments-subtitle">Share your reflection — it appears below for everyone to see.</p>
+        <div class="comment-form">
+          <input
+            type="text"
+            class="comment-input"
+            placeholder="Your name"
+            [value]="commentName"
+            (input)="commentName = $any($event.target).value"
+          />
+          <textarea
+            class="comment-textarea"
+            placeholder="Your message…"
+            rows="2"
+            [value]="commentMessage"
+            (input)="commentMessage = $any($event.target).value"
+          ></textarea>
+          <p class="comment-feeling-label">How did this make you feel?</p>
+          <div class="comment-feeling-options">
+            @for (opt of feelingOptions; track opt) {
+              <button
+                type="button"
+                class="feeling-btn"
+                [class.active]="commentFeeling === opt"
+                (click)="commentFeeling = opt"
+              >
+                {{ opt }}
+              </button>
+            }
+          </div>
+          <button type="button" class="comment-submit" (click)="submitComment()">Share reflection</button>
+        </div>
+        <div class="comments-list-label">
+          <span>Reflections</span>
+          @if (comments().length > 0) {
+            <span class="comments-count">({{ comments().length }})</span>
+          }
+        </div>
+        <div #commentsList class="comments-list">
+          @if (comments().length === 0) {
+            <p class="comments-empty">No reflections yet. Be the first to share yours — it will appear here for everyone to see.</p>
+          } @else {
+            @for (c of comments(); track c.id) {
+              <div class="comment-item">
+                <div class="comment-item-header">
+                  <span class="comment-item-name">{{ c.name }}</span>
+                  <span class="comment-item-feeling">{{ c.feeling }}</span>
+                </div>
+                <p class="comment-item-message">{{ c.message }}</p>
+                <time class="comment-item-date">{{ formatCommentDate(c.date) }}</time>
+              </div>
+            }
+          }
+        </div>
+      } @else {
+        <button type="button" class="comments-toggle" (click)="commentsExpanded.set(true)" aria-label="Open reflections">
+          <span class="comments-toggle-icon">💬</span>
+          <span>Reflections</span>
+          @if (comments().length > 0) {
+            <span class="comments-toggle-count">{{ comments().length }}</span>
+          }
+        </button>
+      }
+    </div>
+  </div>
+</div>
